@@ -2,3 +2,9 @@
 /checkpoints/
 /resource/
 /.idea/
+/.ipynb_checkpoints/
+/__pycache__/
+/*/__pycache__/
+/results/
+/temporary/
+/vg_out/
