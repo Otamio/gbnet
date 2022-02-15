@@ -8,10 +8,6 @@ sys.path.append('./')
 import pipeline
 from config import ModelConfig
 from lib.pytorch_misc import optimistic_restore
-from lib.GBNetAttrEval import GBNetAttrEval
-from dataloaders.visual_genome_ext import Images, ImageDataLoader
-from tqdm import tqdm
-from collections import defaultdict
 
 import json
 from dataloaders.visual_genome import VGDataLoader, VG
