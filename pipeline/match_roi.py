@@ -36,11 +36,11 @@ def match_roi(debug=False):
     object_ids = []  # Data holder to store all matched object ids
     object_matched_pairs = []
     objects_v3_id, non_matches, matches = 0, 0, 0
+    non_matches_int, matches_int = 0, 0
     skips, img_matched = 0, 0
     with h5py.File(pipeline.graph_h5_raw_path, 'r') as roi_h5:
-        for iii, (b, e) in tqdm(enumerate(zip(roi_h5['img_to_first_box'],
-                                              roi_h5['img_to_last_box']))):
-
+        for iii, (b, e) in tqdm(enumerate(zip(roi_h5['img_to_first_box'][0:],
+                                              roi_h5['img_to_last_box'][0:]))):
             # skip images that do not have any bounding boxes
             if b == -1 or e == -1:
                 skips += 1
@@ -66,22 +66,20 @@ def match_roi(debug=False):
                         flag_object_matched = True
                         break
                 if flag_object_matched:
-                    matches += 1
+                    matches_int += 1
                 else:
-                    non_matches += 1
+                    non_matches_int += 1
                     object_ids.append(-1)
                     object_matched_pairs.append((vgg_metadata['idx_to_label'][str(roi_h5['labels'][i].item())], None))
 
             objects_v3_id += 1
 
-            if debug and (iii + 1) % 20000 == 0:
-                print('Epoch:', iii, 'Matching %:', matches / (matches + non_matches))
-                with open(f'{pipeline.match_roi_result_path}/matched_ids.json', 'w') as fd:
-                    json.dump(object_ids, fd, indent=2)
-                with open(f'{pipeline.match_roi_result_path}/matched_pairs.json', 'w') as fd:
-                    json.dump(object_matched_pairs, fd, indent=2)
-
-    print(objects_v3_id)
+            if (iii + 1) % 10000 == 0:
+                print('Object Match Rate:', matches_int / (matches_int + non_matches_int))
+                non_matches += non_matches_int
+                matches += matches_int
+                non_matches_int = 0
+                matches_int = 0
 
     print('###############################################')
     print('Report Match Result:')
