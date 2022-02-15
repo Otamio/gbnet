@@ -52,7 +52,6 @@ def main():
     conf = get_config()
     train = Images('train')  # , num_im=500, num_val_im=100)  # Just pull the first 100 elements for quick testing
     val = Images('val')  #, num_im=500, num_val_im=100)
-    ind_to_predicates = train.ind_to_predicates  # ind_to_predicates[0] means no relationship
 
     train_loader, val_loader = ImageDataLoader.splits(train, val, mode='rel',
                                                       batch_size=conf.batch_size,
