@@ -50,12 +50,14 @@ def main():
         val = test
 
     # Pump the data into dataloaders
+    print('Initializing dataloaders')
     train_loader, val_loader = VGDataLoader.splits(train, val, mode='rel',
                                                    batch_size=conf.batch_size,
                                                    num_workers=conf.num_workers,
                                                    num_gpus=conf.num_gpus)
 
     # Get the Object Detector and load parameters
+    print('Initializing detectors')
     detector = KERN(classes=train.ind_to_classes, rel_classes=train.ind_to_predicates,
                     num_gpus=conf.num_gpus, mode=conf.mode, require_overlap_det=True,
                     use_resnet=conf.use_resnet, use_proposals=conf.use_proposals, pooling_dim=conf.pooling_dim,
