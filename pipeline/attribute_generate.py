@@ -23,12 +23,12 @@ exp_name = 'exp_132'
 eval_epoch = 10
 
 synsetColor = ['white', 'green', 'gray', 'brown', 'blue', 'black', 'pink',
- 'yellow', 'purple', 'red', 'grey', 'orange', 'pink', 'light brown', 'light blue']
+               'yellow', 'purple', 'red', 'grey', 'orange', 'pink', 'light brown', 'light blue']
 synsetTexture = ['metal', 'plastic', 'wooden', 'glass', 'silver']
 
 with open(pipeline.vgg_json_processed_path) as fd:
     metadata = json.load(fd)
-    
+
 with open("/nas/home/jiangwan/gbnet/ipynb/eval_sgdet/prob_label.json") as fd:
     prob_label = json.load(fd)
     prob_label = defaultdict(lambda: defaultdict(float), prob_label)
@@ -47,7 +47,6 @@ def get_config():
 
 
 def main():
-    
     # Load configuration
     conf = get_config()
     ckpt = torch.load(conf.ckpt)
@@ -55,15 +54,16 @@ def main():
 
     # Load Images
     test = Images('test')
-    
+
     # Loda Model
     gbNetEval = GBNetAttrEval(classes=test.ind_to_classes, rel_classes=test.ind_to_predicates,
                               num_gpus=conf.num_gpus, mode=conf.mode, require_overlap_det=True,
-                              use_resnet=conf.use_resnet, use_proposals=conf.use_proposals, pooling_dim=conf.pooling_dim,
+                              use_resnet=conf.use_resnet, use_proposals=conf.use_proposals,
+                              pooling_dim=conf.pooling_dim,
                               ggnn_rel_time_step_num=3, ggnn_rel_hidden_dim=1024, ggnn_rel_output_dim=None,
-                              graph_path=os.path.join(codebase, 'graphs/005/all_edges.pkl'), 
-                              emb_path=os.path.join(codebase, 'graphs/001/emb_mtx.pkl'), 
-                              rel_counts_path=os.path.join(codebase, 'graphs/001/pred_counts.pkl'), 
+                              graph_path=os.path.join(codebase, 'graphs/005/all_edges.pkl'),
+                              emb_path=os.path.join(codebase, 'graphs/001/emb_mtx.pkl'),
+                              rel_counts_path=os.path.join(codebase, 'graphs/001/pred_counts.pkl'),
                               use_knowledge=True, use_embedding=True, refine_obj_cls=False,
                               class_volume=1.0, top_k_to_keep=5, normalize_messages=False
                               )
@@ -77,10 +77,10 @@ def main():
 
     gbNetEval.cuda()
     gbNetEval.eval()
-    
+
     # Generate the results
     results = {}
-    
+
     for k in tqdm(range(len(test))):
 
         fname = test[k]['fn']
@@ -94,7 +94,8 @@ def main():
             if metadata['idx_to_attribute'][str(attr.item() + 1)] == "green":
                 continue
             test_obj_set.add(metadata['idx_to_label'][str(test_objects[obj.item()])])
-            test_attr_set[metadata['idx_to_label'][str(test_objects[obj.item()])]].add(metadata['idx_to_attribute'][str(attr.item() + 1)])
+            test_attr_set[metadata['idx_to_label'][str(test_objects[obj.item()])]].add(
+                metadata['idx_to_attribute'][str(attr.item() + 1)])
             test_attr_size += 1
 
         image_id = os.path.basename(fname).split('.')[0]
@@ -116,13 +117,14 @@ def main():
         top_object_len = len([x.item() for x in (result.obj_scores > top_object_cut).nonzero()])
         top_k = 10
 
-        for i, (obj, attrs_prob, attrs) in enumerate(zip(result.obj_preds, torch.topk(result.attr_pred, top_k, 1)[0], torch.topk(result.attr_pred, top_k, 1)[1])):
+        for i, (obj, attrs_prob, attrs) in enumerate(zip(result.obj_preds, torch.topk(result.attr_pred, top_k, 1)[0],
+                                                         torch.topk(result.attr_pred, top_k, 1)[1])):
             if i >= top_object_len:
                 break
             obj_name = metadata['idx_to_label'][str(obj.item())]
             for attr_prob, attr_id in zip(attrs_prob[1:], attrs[1:]):
-                attr_name = metadata['idx_to_attribute'][str(attr_id.item()+1)]
-                curr_attributes[(i, obj_name)].append( (attr_name, attr_prob.item(), prob_label[obj_name][attr_name]) )
+                attr_name = metadata['idx_to_attribute'][str(attr_id.item() + 1)]
+                curr_attributes[(i, obj_name)].append((attr_name, attr_prob.item(), prob_label[obj_name][attr_name]))
 
         dict_frame = []
 
@@ -136,7 +138,7 @@ def main():
             short_long_flag = False
             thick_thin_flag = False
 
-            for i in range(top_k-1):
+            for i in range(top_k - 1):
 
                 # Filter rare attribute
                 if val[i][2] < 0.003:
@@ -193,7 +195,8 @@ def main():
                                            'VG Conditional Probability (Prior)', 'Probability Divide'])
             else:
                 df = pd.DataFrame(dict_frame).set_index('Id')
-                df = df.sort_values(by=['Id', 'Predicted Probability', 'Probability Divide'], ascending=[True, False, False])
+                df = df.sort_values(by=['Id', 'Predicted Probability', 'Probability Divide'],
+                                    ascending=[True, False, False])
                 df = df[df['Probability Divide'] > 1.1]
                 df['Hit'] = False
                 # Find corresponding attributes
