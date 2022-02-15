@@ -18,7 +18,8 @@ from lib.fpn.box_utils import bbox_overlaps, center_size
 from lib.get_union_boxes import UnionBoxesAndFeats
 from lib.fpn.proposal_assignments.rel_assignments import rel_assignments
 from lib.object_detector import ObjectDetector, gather_res, load_vgg
-from lib.pytorch_misc import transpose_packed_sequence_inds, onehot_logits, arange, enumerate_by_image, diagonal_inds, Flattener
+from lib.pytorch_misc import transpose_packed_sequence_inds, onehot_logits, arange, enumerate_by_image, diagonal_inds, \
+    Flattener
 from lib.surgery import filter_dets
 from lib.fpn.roi_align.functions.roi_align import RoIAlignFunction
 from lib.my_ggnn_16 import GGNN
@@ -32,8 +33,10 @@ class GGNNRelReason(nn.Module):
     """
     Module for relationship classification.
     """
-    def __init__(self, graph_path, emb_path, mode='sgdet', num_obj_cls=151, num_rel_cls=51, obj_dim=4096, rel_dim=4096, 
-                time_step_num=3, hidden_dim=512, output_dim=512, use_knowledge=True, use_embedding=True, refine_obj_cls=False, 
+
+    def __init__(self, graph_path, emb_path, mode='sgdet', num_obj_cls=151, num_rel_cls=51, obj_dim=4096, rel_dim=4096,
+                 time_step_num=3, hidden_dim=512, output_dim=512, use_knowledge=True, use_embedding=True,
+                 refine_obj_cls=False,
                  top_k_to_keep=5, normalize_messages=True):
 
         super(GGNNRelReason, self).__init__()
@@ -44,18 +47,16 @@ class GGNNRelReason(nn.Module):
         self.obj_dim = obj_dim
         self.rel_dim = rel_dim
 
-
         self.obj_proj = nn.Linear(self.obj_dim, hidden_dim)
         self.rel_proj = nn.Linear(self.rel_dim, hidden_dim)
 
         assert not (refine_obj_cls and mode == 'predcls')
-        
-        self.ggnn = GGNN(time_step_num=time_step_num, hidden_dim=hidden_dim, output_dim=output_dim, 
+
+        self.ggnn = GGNN(time_step_num=time_step_num, hidden_dim=hidden_dim, output_dim=output_dim,
                          emb_path=emb_path, graph_path=graph_path, refine_obj_cls=refine_obj_cls,
-                         use_knowledge=use_knowledge, use_embedding=use_embedding, top_k_to_keep=top_k_to_keep, 
+                         use_knowledge=use_knowledge, use_embedding=use_embedding, top_k_to_keep=top_k_to_keep,
                          normalize_messages=normalize_messages)
 
-        
     def forward(self, im_inds, obj_fmaps, obj_logits, rel_inds, vr, obj_labels=None, boxes_per_cls=None):
         """
         Reason relationship classes using knowledge of object and relationship coccurrence.
@@ -66,7 +67,7 @@ class GGNNRelReason(nn.Module):
         if self.mode == 'predcls':
             obj_logits = Variable(onehot_logits(obj_labels.data, self.num_obj_cls))
         obj_probs = F.softmax(obj_logits, 1)
-        if self.mode == 'sgdet':# and not self.training:
+        if self.mode == 'sgdet':  # and not self.training:
             # NMS here for baseline            
             nms_mask = obj_probs.data.clone()
             nms_mask.zero_()
@@ -75,11 +76,11 @@ class GGNNRelReason(nn.Module):
                 boxes_ci = boxes_per_cls.data[:, c_i]
 
                 keep = apply_nms(scores_ci, boxes_ci,
-                                    pre_nms_topn=scores_ci.size(0), post_nms_topn=scores_ci.size(0),
-                                    nms_thresh=0.3)
+                                 pre_nms_topn=scores_ci.size(0), post_nms_topn=scores_ci.size(0),
+                                 nms_thresh=0.3)
                 nms_mask[:, c_i][keep] = 1
 
-            negative_logits = torch.ones_like(obj_logits.data) * (-1000) 
+            negative_logits = torch.ones_like(obj_logits.data) * (-1000)
             obj_logits_to_pass = (nms_mask * obj_logits.data) + ((1 - nms_mask) * negative_logits)
             obj_logits_to_pass = Variable(obj_logits_to_pass)
         else:
@@ -87,16 +88,18 @@ class GGNNRelReason(nn.Module):
 
         obj_fmaps = self.obj_proj(obj_fmaps)
         vr = self.rel_proj(vr)
-        
+
         rel_logits = []
         obj_logits_refined = []
-        for (_, obj_s, obj_e), (_, rel_s, rel_e) in zip(enumerate_by_image(im_inds.data), enumerate_by_image(rel_inds[:,0])):        
-            rl, ol = self.ggnn(rel_inds[rel_s:rel_e, 1:] - obj_s, obj_logits_to_pass[obj_s:obj_e], obj_fmaps[obj_s:obj_e], vr[rel_s:rel_e])
+        for (_, obj_s, obj_e), (_, rel_s, rel_e) in zip(enumerate_by_image(im_inds.data),
+                                                        enumerate_by_image(rel_inds[:, 0])):
+            rl, ol = self.ggnn(rel_inds[rel_s:rel_e, 1:] - obj_s, obj_logits_to_pass[obj_s:obj_e],
+                               obj_fmaps[obj_s:obj_e], vr[rel_s:rel_e])
             rel_logits.append(rl)
             obj_logits_refined.append(ol)
 
         rel_logits = torch.cat(rel_logits, 0)
-        
+
         if self.ggnn.refine_obj_cls:
             obj_logits_refined = torch.cat(obj_logits_refined, 0)
             obj_logits = obj_logits_refined
@@ -111,23 +114,23 @@ class GGNNRelReason(nn.Module):
                 boxes_ci = boxes_per_cls.data[:, c_i]
 
                 keep = apply_nms(scores_ci, boxes_ci,
-                                    pre_nms_topn=scores_ci.size(0), post_nms_topn=scores_ci.size(0),
-                                    nms_thresh=0.3)
+                                 pre_nms_topn=scores_ci.size(0), post_nms_topn=scores_ci.size(0),
+                                 nms_thresh=0.3)
                 nms_mask[:, c_i][keep] = 1
 
-            obj_preds = Variable(nms_mask * obj_probs.data, volatile=True)[:,1:].max(1)[1] + 1
+            obj_preds = Variable(nms_mask * obj_probs.data, volatile=True)[:, 1:].max(1)[1] + 1
         else:
-            obj_preds = obj_labels if obj_labels is not None else obj_probs[:,1:].max(1)[1] + 1
-            
-        return obj_logits, obj_preds, rel_logits
+            obj_preds = obj_labels if obj_labels is not None else obj_probs[:, 1:].max(1)[1] + 1
 
+        return obj_logits, obj_preds, rel_logits
 
 
 class GBNetAttr(nn.Module):
     """
     Knowledge-Embedded Routing Network 
     """
-    def __init__(self, classes, rel_classes, graph_path, emb_path, mode='sgdet', num_gpus=1, 
+
+    def __init__(self, classes, rel_classes, graph_path, emb_path, mode='sgdet', num_gpus=1,
                  require_overlap_det=True, pooling_dim=4096, use_resnet=False, thresh=0.01,
                  use_proposals=False,
                  ggnn_rel_time_step_num=3,
@@ -163,7 +166,6 @@ class GBNetAttr(nn.Module):
             max_per_img=64
         )
 
-
         self.union_boxes = UnionBoxesAndFeats(pooling_size=self.pooling_size, stride=16,
                                               dim=1024 if use_resnet else 512)
 
@@ -176,29 +178,30 @@ class GBNetAttr(nn.Module):
         else:
             roi_fmap = [
                 Flattener(),
-                load_vgg(use_dropout=False, use_relu=False, use_linear=pooling_dim == 4096, pretrained=False).classifier,
+                load_vgg(use_dropout=False, use_relu=False, use_linear=pooling_dim == 4096,
+                         pretrained=False).classifier,
             ]
             if pooling_dim != 4096:
                 roi_fmap.append(nn.Linear(4096, pooling_dim))
             self.roi_fmap = nn.Sequential(*roi_fmap)
             self.roi_fmap_obj = load_vgg(pretrained=False).classifier
 
-        self.ggnn_rel_reason = GGNNRelReason(mode=self.mode, 
-                                             num_obj_cls=len(self.classes), 
-                                             num_rel_cls=len(rel_classes), 
-                                             obj_dim=self.obj_dim, 
-                                             rel_dim=self.rel_dim, 
-                                             time_step_num=ggnn_rel_time_step_num, 
-                                             hidden_dim=ggnn_rel_hidden_dim, 
+        self.ggnn_rel_reason = GGNNRelReason(mode=self.mode,
+                                             num_obj_cls=len(self.classes),
+                                             num_rel_cls=len(rel_classes),
+                                             obj_dim=self.obj_dim,
+                                             rel_dim=self.rel_dim,
+                                             time_step_num=ggnn_rel_time_step_num,
+                                             hidden_dim=ggnn_rel_hidden_dim,
                                              output_dim=ggnn_rel_output_dim,
                                              emb_path=emb_path,
-                                             graph_path=graph_path, 
-                                             refine_obj_cls=refine_obj_cls, 
-                                             use_knowledge=use_knowledge, 
+                                             graph_path=graph_path,
+                                             refine_obj_cls=refine_obj_cls,
+                                             use_knowledge=use_knowledge,
                                              use_embedding=use_embedding,
                                              top_k_to_keep=top_k_to_keep,
                                              normalize_messages=normalize_messages
-                                            )
+                                             )
 
         if rel_counts_path is not None:
             with open(rel_counts_path, 'rb') as fin:
@@ -222,7 +225,7 @@ class GBNetAttr(nn.Module):
             torch.nn.Dropout(0.3),
             torch.nn.Sigmoid()
         )
-        
+
     @property
     def num_classes(self):
         return len(self.classes)
@@ -254,9 +257,6 @@ class GBNetAttr(nn.Module):
             if self.require_overlap:
                 rel_cands = rel_cands & (bbox_overlaps(box_priors.data,
                                                        box_priors.data) > 0)
-
-                # if there are fewer then 100 things then we might as well add some?
-                amt_to_add = 100 - rel_cands.long().sum()
 
             rel_cands = rel_cands.nonzero()
 
@@ -307,14 +307,13 @@ class GBNetAttr(nn.Module):
 
         im_inds = result.im_inds - image_offset
         boxes = result.rm_box_priors
-        
+
         if self.training and result.rel_labels is None:
             assert self.mode == 'sgdet'
             result.rel_labels = rel_assignments(im_inds.data, boxes.data, result.rm_obj_labels.data,
                                                 gt_boxes.data, gt_classes.data, gt_rels.data,
                                                 image_offset, filter_non_overlap=True,
                                                 num_sample_per_gt=1)
-
 
         rel_inds = self.get_rel_inds(result.rel_labels, im_inds, boxes)
         rois = torch.cat((im_inds[:, None].float(), boxes), 1)
@@ -331,23 +330,14 @@ class GBNetAttr(nn.Module):
             rel_inds=rel_inds,
             obj_labels=result.rm_obj_labels if self.training or self.mode == 'predcls' else None,
             boxes_per_cls=result.boxes_all
-        )   
-        
+        )
+
         result.attr_pred = self.attrNet(result.obj_fmap)
         result.fnames = fnames
 
         twod_inds = arange(result.obj_preds.data) * self.num_classes + result.obj_preds.data
         result.obj_scores = F.softmax(result.rm_obj_dists, dim=1).view(-1)[twod_inds]
 
-        # Bbox regression
-        if self.mode == 'sgdet':
-            bboxes = result.boxes_all.view(-1, 4)[twod_inds].view(result.boxes_all.size(0), 4)
-        else:
-            # Boxes will get fixed by filter_dets function.
-            bboxes = result.rm_box_priors
-
-        rel_rep = F.softmax(result.rel_dists, dim=1)
-        
         return result
 
         return filter_dets(bboxes, result.obj_scores,

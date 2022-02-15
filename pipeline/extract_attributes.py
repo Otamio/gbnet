@@ -20,7 +20,9 @@ def extract_top_attributes(k=50, debug=False):
     object_id_2_attributes = defaultdict(list)
 
     # Load data and their attributes
+
     print('Scanning through the images......')
+
     for image in tqdm(attributes_v2):
         for roi in image['attributes']:
             if 'attributes' in roi:  # Get metadata from objects with labels
