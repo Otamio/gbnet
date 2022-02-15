@@ -5,18 +5,18 @@ import os
 from argparse import ArgumentParser
 import numpy as np
 
-ROOT_PATH = '/path/to/GBNet-Supp'
+ROOT_PATH = '/nas/home/jiangwan/repo/gbnet'
 
 def path(fn):
     return os.path.join(ROOT_PATH, fn)
 
 def stanford_path(fn):
-    return os.path.join('/path/to/stanford/preprocessed/metadata', fn)
+    return os.path.join('/nas/home/jiangwan/repo/gbnet/temporary/processed', fn)
 
 # =============================================================================
 # Update these with where your data is stored ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-VG_IMAGES = '/path/to/visual/genome/images'
+VG_IMAGES = '/nas/home/jiangwan/repo/gbnet/resource/vg_images'
 RCNN_CHECKPOINT_FN = path('checkpoints/vgdet/vg-24.tar')
 
 IM_DATA_FN = stanford_path('image_data.json')
