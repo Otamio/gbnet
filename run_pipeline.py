@@ -3,6 +3,7 @@ import pipeline.match_roi
 import pipeline.inject_attribute
 import pipeline.attrnet_train
 import pipeline.attribute_generate
+import pipeline.graph_generate
 import sys
 
 
