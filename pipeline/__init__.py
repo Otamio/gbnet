@@ -1,5 +1,5 @@
 __all__ = ['extract_attributes', 'match_roi', 'inject_attribute',
-           'attrnet_train', 'attribute_generate']
+           'attrnet_train', 'attribute_generate', 'graph_generate']
 
 objects_zip_path = "resource/labeled/objects.v3.json.zip"
 attributes_zip_path = "resource/labeled/attributes.json.zip"

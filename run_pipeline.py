@@ -17,6 +17,8 @@ def main():
         pipeline.attrnet_train.main()
     elif sys.argv[1] == "generate":
         pipeline.attribute_generate.main()
+    elif sys.argv[1] == "graph":
+        pipeline.graph_generate.main()
 
 
 if __name__ == "__main__":
