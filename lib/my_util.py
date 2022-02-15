@@ -15,7 +15,7 @@ class XavierLinear(nn.Module):
     def __init__(self, in_features, out_features, bias=True):
         super(XavierLinear, self).__init__()
         self.linear = nn.Linear(in_features, out_features, bias=bias)
-        init.xavier_normal(self.linear.weight)
+        init.xavier_normal_(self.linear.weight)
 
     def forward(self, x):
         return self.linear(x)

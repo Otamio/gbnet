@@ -7,14 +7,17 @@ import numpy as np
 
 ROOT_PATH = '/nas/home/jiangwan/repo/gbnet'
 
+
 def path(fn):
     return os.path.join(ROOT_PATH, fn)
+
 
 def stanford_path(fn):
     return os.path.join('/nas/home/jiangwan/repo/gbnet/temporary/processed', fn)
 
 # =============================================================================
 # Update these with where your data is stored ~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 VG_IMAGES = '/nas/home/jiangwan/repo/gbnet/resource/vg_images'
 RCNN_CHECKPOINT_FN = path('checkpoints/vgdet/vg-24.tar')
@@ -57,6 +60,7 @@ ANCHOR_SIZE = 16
 
 ANCHOR_RATIOS = (0.23232838, 0.63365731, 1.28478321, 3.15089189) #(0.5, 1, 2)
 ANCHOR_SCALES = (2.22152954, 4.12315647, 7.21692515, 12.60263013, 22.7102731) #(4, 8, 16, 32)
+
 
 class ModelConfig(object):
     """Wrapper class for model hyperparameters."""
@@ -153,13 +157,11 @@ class ModelConfig(object):
             self.save_rel_recall = os.path.join(ROOT_PATH, self.save_rel_recall)
         else:
             self.save_rel_recall = None
-        
 
         assert self.val_size >= 0
 
         if self.mode not in MODES:
             raise ValueError("Invalid mode: mode must be in {}".format(MODES))
-
 
         if self.ckpt is not None and not os.path.exists(self.ckpt):
             raise ValueError("Ckpt file ({}) doesnt exist".format(self.ckpt))
@@ -170,7 +172,6 @@ class ModelConfig(object):
         :return:
         """
         parser = ArgumentParser(description='training code')
-
 
         parser.add_argument('-ckpt', dest='ckpt', help='Filename to load from', type=str, default='')
         parser.add_argument('-save_dir', dest='save_dir',
@@ -192,7 +193,6 @@ class ModelConfig(object):
                             default=100)
         parser.add_argument('-m', dest='mode', help='mode in {sgdet, sgcls, predcls}', type=str, default='sgdet')
 
-
         parser.add_argument('-cache', dest='cache', help='where should we cache predictions', type=str,
                             default='')
 
@@ -204,7 +204,6 @@ class ModelConfig(object):
         parser.add_argument('-proposals', dest='use_proposals', help='Use Xu et als proposals', action='store_true')
         parser.add_argument('-pooling_dim', dest='pooling_dim', help='Dimension of pooling', type=int, default=4096)
 
-
         parser.add_argument('-use_ggnn_obj', dest='use_ggnn_obj', help='use GGNN_obj module', action='store_true')
         parser.add_argument('-ggnn_obj_time_step_num', dest='ggnn_obj_time_step_num', help='time step number of GGNN_obj', type=int, default=3)
         parser.add_argument('-ggnn_obj_hidden_dim', dest='ggnn_obj_hidden_dim', help='node hidden state dimension of GGNN_obj', type=int, default=512)
@@ -212,14 +211,12 @@ class ModelConfig(object):
         parser.add_argument('-use_obj_knowledge', dest='use_obj_knowledge', help='use object cooccurrence knowledge', action='store_true')
         parser.add_argument('-obj_knowledge', dest='obj_knowledge', help='Filename to load matrix of object cooccurrence knowledge', type=str, default='')
 
-
         parser.add_argument('-use_ggnn_rel', dest='use_ggnn_rel', help='use GGNN_rel module', action='store_true')
         parser.add_argument('-ggnn_rel_time_step_num', dest='ggnn_rel_time_step_num', help='time step number of GGNN_rel', type=int, default=3)
         parser.add_argument('-ggnn_rel_hidden_dim', dest='ggnn_rel_hidden_dim', help='node hidden state dimension of GGNN_rel', type=int, default=512)
         parser.add_argument('-ggnn_rel_output_dim', dest='ggnn_rel_output_dim', help='node output feature dimension of GGNN_rel', type=int, default=512)
         parser.add_argument('-use_rel_knowledge', dest='use_rel_knowledge', help='use cooccurrence knowledge of object pairs and relationships', action='store_true')
         parser.add_argument('-rel_knowledge', dest='rel_knowledge', help='Filename to load matrix of cooccurrence knowledge of object pairs and relationships', type=str, default='')
-
 
         parser.add_argument('-tb_log_dir', dest='tb_log_dir', help='dir to save tensorboard summaries', type=str, default='')
         parser.add_argument('-save_rel_recall', dest='save_rel_recall', help='dir to save relationship results', type=str, default='')
